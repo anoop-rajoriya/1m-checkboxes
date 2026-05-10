@@ -1,34 +1,23 @@
-import http from "http";
+import express from "express";
+import { fileURLToPath } from "url";
 import path from "path";
 
-import express from "express";
-import { Server } from "socket.io";
+const port = 8080;
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+const publicDir = path.join(__dirname, "../public");
 
-const main = async () => {
+async function main() {
   const app = express();
-  const server = http.createServer(app);
-  const port = 8080;
-  const io = new Server(server);
-  const checkboxes = new Array(100).fill(false);
+  app.use(express.static(publicDir));
 
-  // express endpoints
-  app.use(express.static("./public"));
-
-  app.get("/checkboxes", (req, res) => {
-    res.status(200).json({ checkboxes });
+  app.get("/api/health", (req, res) => {
+    res.json({ status: "ok" });
   });
 
-  // socket events
-  io.on("connection", (socket) => {
-    socket.on("UPDATE", ({ key, value }) => {
-      checkboxes[key] = value;
-      socket.broadcast.emit("UPDATE", { key, value });
-    });
+  app.listen(port, () => {
+    console.log(`server running on http://localhost:${port}`);
   });
+}
 
-  server.listen(port, () =>
-    console.log(`server running on http://localhost:${port}`),
-  );
-};
-
-main().catch((error) => console.log(`SERVER ERROR "${error.message}"`, error));
+main().catch((err) => console.error(`Server Error ${err.message}`));
